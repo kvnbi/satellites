@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Kevin's Space Platform</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="globe"></div>
+  <div id="header">Kevin's Space Platform</div>
+  <div id="loading">Loading…</div>
+  <div id="leftStack">
+    <div id="search">
+      <input id="search-input" type="text" placeholder="Name / SATCAT"
+             autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <button id="search-clear" aria-label="Clear search" tabindex="-1">✕</button>
+      <div id="search-results"></div>
+    </div>
+    <div id="filters">
+      <div class="fl-head" id="fl-head">
+        <span class="fl-title">Filters</span>
+        <span class="fl-chev">▶</span>
+      </div>
+      <div class="fl-body">
+        <div class="fl-status" id="fl-status"></div>
+        <div class="fl-group">
+          <div class="fl-label">Object type</div>
+          <div class="fl-chips" id="fl-type">
+            <button class="fl-chip on" data-k="pay">Payload</button>
+            <button class="fl-chip on" data-k="rb">Rocket</button>
+            <button class="fl-chip on" data-k="deb">Debris</button>
+          </div>
+        </div>
+        <div class="fl-group">
+          <div class="fl-label">Orbit regime</div>
+          <div class="fl-chips" id="fl-regime">
+            <button class="fl-chip on" data-k="leo">LEO</button>
+            <button class="fl-chip on" data-k="meo">MEO</button>
+            <button class="fl-chip on" data-k="geo">GEO</button>
+            <button class="fl-chip on" data-k="heo">HEO</button>
+          </div>
+        </div>
+        <div class="fl-group">
+          <div class="fl-label">Altitude (km)</div>
+          <div class="fl-range">
+            <input id="fl-alt-min" type="number" inputmode="numeric" placeholder="min" />
+            <span>–</span>
+            <input id="fl-alt-max" type="number" inputmode="numeric" placeholder="max" />
+          </div>
+        </div>
+        <div class="fl-group">
+          <div class="fl-label">Inclination (°)</div>
+          <div class="fl-range">
+            <input id="fl-inc-min" type="number" inputmode="numeric" placeholder="0" />
+            <span>–</span>
+            <input id="fl-inc-max" type="number" inputmode="numeric" placeholder="180" />
+          </div>
+        </div>
+        <button class="fl-reset" id="fl-reset">Reset filters</button>
+      </div>
+    </div>
+    <div id="featured">
+      <div class="fe-head" id="fe-head">
+        <span class="fe-title">Popular</span>
+        <span class="fe-chev">▶</span>
+      </div>
+      <div class="fe-body" id="fe-body"></div>
+    </div>
+  </div>
+  <div id="panelStack">
+    <div id="info"></div>
+    <div id="analytics">
+      <div class="an-head" id="an-head">
+        <span class="an-title">Analytics</span>
+        <span class="an-head-actions">
+          <button class="an-expand" id="an-expand" title="Pop out">⤢</button>
+          <span class="an-chev">▶</span>
+        </span>
+      </div>
+      <div class="an-body">
+        <div class="an-tabs" id="an-tabs">
+          <button class="an-tab active" data-tab="track">Trk</button>
+          <button class="an-tab" data-tab="alt">Alt</button>
+          <button class="an-tab" data-tab="vel">Vel</button>
+          <button class="an-tab" data-tab="lat">Lat</button>
+          <button class="an-tab" data-tab="lng">Lng</button>
+        </div>
+        <div class="an-ctrl">
+          <label>Window</label>
+          <select id="an-window">
+            <option value="orbit">1 orbit</option>
+            <option value="5400000">90 minutes</option>
+            <option value="10800000">3 hours</option>
+            <option value="21600000">6 hours</option>
+            <option value="43200000">12 hours</option>
+            <option value="86400000">24 hours</option>
+            <option value="259200000">3 days</option>
+            <option value="604800000">7 days</option>
+          </select>
+        </div>
+        <canvas id="an-canvas"></canvas>
+        <div class="an-read" id="an-read"></div>
+        <div class="an-data" id="an-data"></div>
+      </div>
+    </div>
+  </div>
+  <div id="tooltip"></div>
+  <div id="modes">
+    <button data-mode="earth"  title="Earth view: orbit the globe (1)">Earth</button>
+    <button data-mode="follow" title="Follow view: ride along the selected satellite (2)">Follow</button>
+    <button data-mode="orbit"  title="Orbit view: see the satellite's full orbital path (3)">Orbit</button>
+  </div>
+  <div id="an-backdrop"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
