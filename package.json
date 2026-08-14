@@ -1,7 +1,7 @@
 {
-  "name": "kevins-space-platform",
+  "name": "kvnbi/satellites",
   "version": "1.0.0",
-  "description": "Real-time 3D satellite tracking platform: orbits, ground tracks, and analytics for every catalogued object in Earth orbit.",
+  "description": "Satellites rendered on an interactive globe with live positions, orbit paths, and satellite analytics.",
   "type": "module",
   "private": true,
   "scripts": {

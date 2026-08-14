@@ -1,4 +1,4 @@
-# Satellites
+# satellites
 
 Satellites rendered on an interactive globe with live positions, orbit paths, and satellite analytics.
 
