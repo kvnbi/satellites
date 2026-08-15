@@ -227,10 +227,10 @@ function anDrawTrack(w, h) {
 
   if (anEarthImg.complete && anEarthImg.naturalWidth > 0) {
     anCtx.save();
-    anCtx.globalAlpha = 0.55;
+    anCtx.globalAlpha = 0.8;
     anCtx.drawImage(anEarthImg, pad, pad, pw, ph);
     anCtx.restore();
-    anCtx.fillStyle = 'rgba(0,0,0,0.32)';
+    anCtx.fillStyle = 'rgba(0,0,0,0.18)';
     anCtx.fillRect(pad, pad, pw, ph);
   }
 
@@ -265,8 +265,7 @@ function anDrawTrack(w, h) {
   const clat = anSampleAt(anLat, nf), clng = anSampleAt(anLng, nf);
   if (isFinite(clat) && isFinite(clng)) {
     const x = MX(clng), y = MY(clat);
-    anCtx.fillStyle = 'rgba(51,255,115,0.18)'; anCtx.beginPath(); anCtx.arc(x, y, 6, 0, 6.283); anCtx.fill();
-    anCtx.fillStyle = AN_MARK; anCtx.beginPath(); anCtx.arc(x, y, 3, 0, 6.283); anCtx.fill();
+    anCtx.fillStyle = AN_MARK; anCtx.beginPath(); anCtx.arc(x, y, 3.2, 0, 6.283); anCtx.fill();
   }
 
   let hov = null;
