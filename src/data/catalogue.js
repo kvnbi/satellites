@@ -159,13 +159,22 @@ export async function loadAll() {
   if (haveCache && lastFetchAge() < REFRESH_MS) return;
 
   if (haveCache) stamp();
-  else el.textContent = 'Fetching satellite data…';
-  const fresh = await mapLimit(SOURCES, 6, fetchSource);
+  else el.textContent = `Fetching satellite data… (0/${SOURCES.length})`;
+  let done = 0;
+  const fresh = await mapLimit(SOURCES, 6, async (url) => {
+    const r = await fetchSource(url);
+    done++;
+    if (!haveCache) el.textContent = `Fetching satellite data… (${done}/${SOURCES.length})`;
+    return r;
+  });
 
   const loaded = fresh.filter(g => g.length).length;
   if (loaded) buildCatalogue(fresh);
   if (loaded >= SOURCES.length * 0.8) stamp();
 
   if (satMesh) el.style.display = 'none';
-  else el.textContent = 'No satellite data available (offline, no cache).';
+  else {
+    el.innerHTML = 'No satellite data available (offline, no cache). <button id="retry-load">Retry</button>';
+    document.getElementById('retry-load').onclick = loadAll;
+  }
 }

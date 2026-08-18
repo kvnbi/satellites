@@ -31,10 +31,17 @@ html, body {
 
 #loading {
   position: fixed; inset: 0;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
   color: #777; font: 400 13px/1 var(--font-ui);
   pointer-events: none; z-index: 10;
 }
+#loading button {
+  pointer-events: auto; appearance: none; -webkit-appearance: none; cursor: pointer;
+  background: rgba(255,255,255,0.06); color: #ccd2da;
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 5px;
+  padding: 5px 10px; font: 500 11px var(--font-ui);
+}
+#loading button:hover { background: rgba(255,255,255,0.10); }
 
 #header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 20; height: var(--header-h);
