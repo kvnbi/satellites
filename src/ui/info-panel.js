@@ -44,6 +44,7 @@ export function renderInfo(s) {
     liveRow('Speed',    'live-speed', '…') +
     liveRow('Lat',      'live-lat',   '…') +
     liveRow('Lng',      'live-lng',   '…') +
+    liveRow('Over',     'live-loc',   '…') +
     `<div class="info-extra">` +
       row('NORAD',        m.NORAD_CAT_ID) +
       row('Type',         TYPE_LABELS[m.OBJECT_TYPE] ?? m.OBJECT_TYPE ?? 'n/a') +
@@ -70,9 +71,23 @@ export function renderInfo(s) {
     speed: infoEl.querySelector('#live-speed'),
     lat:   infoEl.querySelector('#live-lat'),
     lng:   infoEl.querySelector('#live-lng'),
+    loc:   infoEl.querySelector('#live-loc'),
   };
+  geoGen++; lastGeoMs = 0;
   infoEl.style.display = 'block';
   updateLiveInfo();
+}
+
+let geoGen = 0, lastGeoMs = 0;
+async function updateLocation(lat, lng) {
+  const myGen = geoGen;
+  try {
+    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+    const d = await r.json();
+    if (myGen !== geoGen || !liveEls) return;
+    const place = d.city || d.locality;
+    liveEls.loc.textContent = place && d.countryName ? `${place}, ${d.countryName}` : (d.countryName || 'Ocean');
+  } catch {}
 }
 
 function updateLiveInfo() {
@@ -97,6 +112,8 @@ function updateLiveInfo() {
     liveEls.lat.textContent = lat.toFixed(4) + '°';
     liveEls.lng.textContent = lng.toFixed(4) + '°';
     e.lat = lat; e.lng = lng;
+    const nowMs = Date.now();
+    if (nowMs - lastGeoMs >= 2500) { lastGeoMs = nowMs; updateLocation(lat, lng); }
   }
   if (isFinite(alt)) {
     liveEls.alt.textContent = alt.toFixed(0) + ' km';
