@@ -1,8 +1,9 @@
 import * as sat from 'satellite.js';
-import { S, colArr, SELECT_RGB } from '../state.js';
+import { S } from '../state.js';
 import { buildActiveSet } from '../core/propagation.js';
 import { satMesh, initSatMesh, updateSatInstances } from '../core/sat-mesh.js';
 import { setCamMode, syncModeButtons } from '../camera/modes.js';
+import { cacheGet, cacheSet, cacheGetMany, purgeLegacyCache } from './cache.js';
 
 const BASE = 'https://celestrak.org/NORAD/elements/';
 const gp  = (g) => `${BASE}gp.php?GROUP=${encodeURIComponent(g)}&FORMAT=TLE`;
@@ -27,9 +28,17 @@ const SOURCES = [
   gp('cosmos-1408-debris'), gp('iridium-33-debris'),
 ];
 
+const cacheKeyFor = (url) => 'tle:' + url;
+
+function usableBody(body) {
+  return !!body && body[0] !== '<' &&
+         !body.startsWith('Invalid') &&
+         !body.startsWith('GP data has not updated');
+}
+
 async function fetchSource(url) {
-  const cacheKey = 'tle:' + url;
-  let text = null;
+  const key = cacheKeyFor(url);
+  let text = null, stored = false;
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 15000);
@@ -37,18 +46,17 @@ async function fetchSource(url) {
     clearTimeout(timer);
     if (r.ok) {
       const body = await r.text();
-      if (body && body[0] !== '<' &&
-          !body.startsWith('Invalid') &&
-          !body.startsWith('GP data has not updated')) {
+      if (usableBody(body)) {
         text = body;
-        try { localStorage.setItem(cacheKey, body); } catch {}
+        stored = await cacheSet(key, body);
       }
     }
   } catch {}
   if (text === null) {
-    try { text = localStorage.getItem(cacheKey); } catch {}
+    text = await cacheGet(key);
+    stored = text !== null;
   }
-  return text ? parseTLE(text) : [];
+  return { objs: text ? parseTLE(text) : [], stored };
 }
 
 function parseTLE(text) {
@@ -119,18 +127,8 @@ function buildCatalogue(groups) {
     }
   }
   if (records.length === 0) return false;
-  const prevNorad = (S.selIdx >= 0 && S.validSats[S.selIdx])
-    ? S.validSats[S.selIdx].meta.NORAD_CAT_ID : -1;
   S.satRecords = records;
-  S.selIdx = -1;
   buildActiveSet();
-  if (prevNorad >= 0) {
-    const ni = S.searchId.indexOf(String(prevNorad));
-    if (ni >= 0) {
-      S.selIdx = ni;
-      colArr[ni*3] = SELECT_RGB[0]; colArr[ni*3+1] = SELECT_RGB[1]; colArr[ni*3+2] = SELECT_RGB[2];
-    }
-  }
   if (!satMesh) initSatMesh();
   else { satMesh.count = S.count; satMesh.instanceColor.needsUpdate = true; updateSatInstances(); }
   if (S.selIdx >= 0) syncModeButtons();
@@ -139,38 +137,51 @@ function buildCatalogue(groups) {
 }
 
 const REFRESH_MS = 6 * 3600 * 1000;
-const STAMP_KEY  = 'tle:lastFetch';
-const lastFetchAge = () => {
-  try { return Date.now() - (parseInt(localStorage.getItem(STAMP_KEY), 10) || 0); }
-  catch { return Infinity; }
-};
+const STAMP_KEY  = 'meta:lastFetch';
+
+async function lastFetchMs() {
+  const at = Number(await cacheGet(STAMP_KEY));
+  return isFinite(at) ? at : 0;
+}
+
+const writeStamp = () => cacheSet(STAMP_KEY, Date.now());
 
 export async function loadAll() {
-  const el    = document.getElementById('loading');
-  const stamp = () => { try { localStorage.setItem(STAMP_KEY, String(Date.now())); } catch {} };
+  const el = document.getElementById('loading');
+  purgeLegacyCache();
 
-  const cached = SOURCES.map(url => {
-    try { const t = localStorage.getItem('tle:' + url); return t ? parseTLE(t) : []; }
-    catch { return []; }
-  });
-  const haveCache = buildCatalogue(cached);
+  const texts   = await cacheGetMany(SOURCES.map(cacheKeyFor));
+  const groups  = texts.map((t) => (t ? parseTLE(t) : []));
+  const present = texts.map((t) => t !== null);
+  const haveCache = present.some(Boolean) && buildCatalogue(groups);
   if (haveCache) el.style.display = 'none';
 
-  if (haveCache && lastFetchAge() < REFRESH_MS) return;
+  const stale = Date.now() - (await lastFetchMs()) >= REFRESH_MS;
+  const todo  = [];
+  for (let i = 0; i < SOURCES.length; i++) {
+    if (stale || !haveCache || !present[i]) todo.push(i);
+  }
+  if (todo.length === 0) return;
 
-  if (haveCache) stamp();
-  else el.textContent = `Fetching satellite data… (0/${SOURCES.length})`;
+  if (!haveCache) el.textContent = `Fetching satellite data… (0/${todo.length})`;
   let done = 0;
-  const fresh = await mapLimit(SOURCES, 6, async (url) => {
-    const r = await fetchSource(url);
+  const results = await mapLimit(todo, 6, async (i) => {
+    const r = await fetchSource(SOURCES[i]);
     done++;
-    if (!haveCache) el.textContent = `Fetching satellite data… (${done}/${SOURCES.length})`;
-    return r;
+    if (!haveCache) el.textContent = `Fetching satellite data… (${done}/${todo.length})`;
+    return { i, objs: r.objs, stored: r.stored };
   });
 
-  const loaded = fresh.filter(g => g.length).length;
-  if (loaded) buildCatalogue(fresh);
-  if (loaded >= SOURCES.length * 0.8) stamp();
+  let loaded = 0;
+  for (const r of results) {
+    groups[r.i] = r.objs;
+    present[r.i] = r.stored;
+    if (r.objs.length) loaded++;
+  }
+  if (loaded) buildCatalogue(groups);
+
+  const stored = present.filter(Boolean).length;
+  if (stored >= SOURCES.length * 0.8) await writeStamp();
 
   if (satMesh) el.style.display = 'none';
   else {

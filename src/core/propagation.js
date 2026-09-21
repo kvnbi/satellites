@@ -2,12 +2,16 @@ import * as THREE   from 'three';
 import * as sat      from 'satellite.js';
 import { globe, EARTH_R_KM } from './scene.js';
 import { S, MAX_SATS, colArr, DOT_RGB, SELECT_RGB, posArr, posA, posB } from '../state.js';
+import { satMesh } from './sat-mesh.js';
 import { applyFilters } from '../ui/filters.js';
+import { clearSelectionUI } from '../ui/selection.js';
 
 const STEP_MS = 5000;
 let tA = 0, tB = 0;
 
 export function buildActiveSet() {
+  const prevNorad = (S.selIdx >= 0 && S.validSats[S.selIdx])
+    ? String(S.validSats[S.selIdx].meta.NORAD_CAT_ID) : null;
   const date = new Date();
   const gmst = sat.gstime(date);
   S.validSats = [];
@@ -37,6 +41,17 @@ export function buildActiveSet() {
     S.count++;
   }
   tA = tB = Date.now();
+
+  S.selIdx = prevNorad === null ? -1 : S.searchId.indexOf(prevNorad);
+  if (S.selIdx >= 0) {
+    const i = S.selIdx;
+    colArr[i*3] = SELECT_RGB[0]; colArr[i*3+1] = SELECT_RGB[1]; colArr[i*3+2] = SELECT_RGB[2];
+  } else if (prevNorad !== null) {
+    clearSelectionUI();
+  }
+  if (S.followHideIdx >= 0) S.followHideIdx = S.selIdx;
+  if (satMesh) satMesh.instanceColor.needsUpdate = true;
+
   applyFilters();
 }
 
@@ -63,9 +78,6 @@ function roll() {
         }
       }
     } catch {}
-
-    const c = (i === S.selIdx) ? SELECT_RGB : DOT_RGB;
-    colArr[i*3] = c[0]; colArr[i*3+1] = c[1]; colArr[i*3+2] = c[2];
   }
 }
 

@@ -24,15 +24,19 @@ export function selectIndex(idx) {
   setCamMode(S.camMode === 'follow' ? 'follow' : 'orbit');
 }
 
+export function clearSelectionUI() {
+  infoEl.style.display = 'none';
+  anOnDeselect();
+  hideSelectionOverlays();
+}
+
 export function deselectCurrent() {
   if (S.selIdx < 0) return;
   const exitIdx = S.selIdx;
   restoreColour(S.selIdx);
   if (satMesh) satMesh.instanceColor.needsUpdate = true;
   S.selIdx = -1;
-  infoEl.style.display = 'none';
-  anOnDeselect();
-  hideSelectionOverlays();
+  clearSelectionUI();
   const wasFollow = (S.camMode === 'follow');
   if (S.camMode !== 'earth') {
     setCamMode('earth');
