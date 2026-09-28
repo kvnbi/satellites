@@ -63,7 +63,6 @@ function roll() {
   const gmst = sat.gstime(date);
   for (let i = 0; i < S.count; i++) {
     const e = S.validSats[i];
-    posB[i*3] = posA[i*3]; posB[i*3+1] = posA[i*3+1]; posB[i*3+2] = posA[i*3+2];
     try {
       const pv = sat.propagate(e.satrec, date);
       if (pv?.position && typeof pv.position === 'object') {

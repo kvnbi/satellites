@@ -91,7 +91,7 @@ export function pickSatAt(clientX, clientY) {
   const slope   = SAT_MIN_PX * 2 * tanHalf / rect.height;
   const BASE_PX = HAS_COARSE_POINTER ? 22 : 8;
 
-  let bestIdx = -1, bestD = Infinity;
+  let bestIdx = -1, bestD2 = Infinity;
   for (let i = 0; i < S.count; i++) {
     if (!visArr[i]) continue;
     const wx = posArr[i*3], wy = posArr[i*3+1], wz = posArr[i*3+2];
@@ -106,13 +106,14 @@ export function pickSatAt(clientX, clientY) {
     if (_pick.z > 1) continue;
     const sx = (_pick.x + 1) * 0.5 * rect.width;
     const sy = (1 - _pick.y) * 0.5 * rect.height;
-    const d  = Math.hypot(sx - mx, sy - my);
+    const screenDx = sx - mx, screenDy = sy - my;
+    const d2 = screenDx * screenDx + screenDy * screenDy;
 
     const dist    = Math.sqrt(dd);
     const worldR  = Math.max(SAT_BOUND_RADIUS, slope * dist);
     const screenR = worldR / (dist * tanHalf) * halfH;
     const allow   = Math.max(BASE_PX, screenR);
-    if (d <= allow && d < bestD) { bestD = d; bestIdx = i; }
+    if (d2 <= allow * allow && d2 < bestD2) { bestD2 = d2; bestIdx = i; }
   }
   return bestIdx;
 }
