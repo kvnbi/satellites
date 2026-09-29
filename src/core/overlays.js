@@ -3,7 +3,7 @@ import * as sat           from 'satellite.js';
 import { Line2 }          from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry }   from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial }   from 'three/examples/jsm/lines/LineMaterial.js';
-import { scene, globe, GLOBE_R, EARTH_R_KM, viewportHeight } from './scene.js';
+import { scene, globe, GLOBE_R, EARTH_R_KM } from './scene.js';
 import { S, posArr } from '../state.js';
 
 const orbitGeom = new LineGeometry();
@@ -11,14 +11,14 @@ const orbitMat  = new LineMaterial({
   color: 0x22ff66, transparent: true, opacity: 0.7,
   linewidth: 2.0, worldUnits: false,
 });
-orbitMat.resolution.set(window.innerWidth, viewportHeight());
+orbitMat.resolution.set(window.innerWidth, window.innerHeight);
 const orbitLine = new Line2(orbitGeom, orbitMat);
 orbitLine.visible = false;
 orbitLine.frustumCulled = false;
 scene.add(orbitLine);
 
 window.addEventListener('resize', () => {
-  orbitMat.resolution.set(window.innerWidth, viewportHeight());
+  orbitMat.resolution.set(window.innerWidth, window.innerHeight);
 });
 
 let orbitGmst0   = 0;

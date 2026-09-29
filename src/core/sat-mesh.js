@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, camera, renderer, GLOBE_R, HAS_COARSE_POINTER, viewportHeight } from './scene.js';
+import { scene, camera, renderer, GLOBE_R, HAS_COARSE_POINTER } from './scene.js';
 import { S, MAX_SATS, visArr, colArr, posArr } from '../state.js';
 
 const SAT_BOUND_RADIUS = 0.42;
@@ -39,7 +39,7 @@ export let satMesh = null;
 
 function minRadiusSlope() {
   const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5);
-  return SAT_MIN_PX * 2 * tanHalf / viewportHeight();
+  return SAT_MIN_PX * 2 * tanHalf / window.innerHeight;
 }
 
 export function initSatMesh() {

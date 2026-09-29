@@ -4,7 +4,7 @@ import { esc } from '../utils.js';
 
 export const infoEl = document.getElementById('info');
 
-const TYPE_LABELS = { PAY: 'Payload', DEB: 'Debris', 'R/B': 'Rocket body', UNK: 'Unknown', TBA: 'TBA' };
+const TYPE_LABELS = { PAY: 'Payload', DEB: 'Debris', 'R/B': 'Rocket body' };
 
 function row(label, val) {
   return `<div class="row"><span class="lbl">${label}</span><span>${esc(val)}</span></div>`;

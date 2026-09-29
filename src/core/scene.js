@@ -5,13 +5,9 @@ import ThreeGlobe        from 'three-globe';
 export const EARTH_R_KM = 6371;
 
 const container = document.getElementById('globe');
-const headerEl  = document.getElementById('header');
-export function viewportHeight() {
-  return window.innerHeight - headerEl.offsetHeight;
-}
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, viewportHeight());
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 container.appendChild(renderer.domElement);
 
@@ -19,7 +15,7 @@ export const scene = new THREE.Scene();
 scene.add(new THREE.AmbientLight(0xffffff, 3.0));
 
 export const camera = new THREE.PerspectiveCamera(
-  50, window.innerWidth / viewportHeight(), 0.1, 1e5
+  50, window.innerWidth / window.innerHeight, 0.1, 1e5
 );
 
 export const globe = new ThreeGlobe({ animateIn: false })
@@ -61,7 +57,7 @@ export function tuneRotateSpeed() {
 }
 
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / viewportHeight();
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, viewportHeight());
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
