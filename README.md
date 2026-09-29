@@ -1,6 +1,6 @@
 # Satellites
 
-Satellites on an interactive globe.
+Live satellite tracker on an interactive globe.
 
 Data from CelesTrak.
 
