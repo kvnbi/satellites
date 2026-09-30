@@ -10,6 +10,7 @@ import { tickLiveInfo } from './ui/info-panel.js';
 import { tickAnalytics, isAnalyticsExpanded, collapseAnalyticsExpanded } from './ui/analytics.js';
 import { renderFeatured } from './ui/featured.js';
 import { S } from './state.js';
+import './ui/time-control.js';
 
 import './ui/filters.js';
 import './ui/search.js';

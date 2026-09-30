@@ -105,6 +105,11 @@
     </div>
   </div>
   <div id="tooltip"></div>
+  <div id="time-control">
+    <input id="time-slider" type="range" min="-360" max="0" step="1" value="0" aria-label="Time, from six hours ago to now" />
+    <span id="time-readout"></span>
+    <button id="time-live" type="button" disabled>Live</button>
+  </div>
   <div id="modes">
     <button data-mode="earth"  title="Earth view: orbit the globe (1)">Earth</button>
     <button data-mode="follow" title="Follow view: ride along the selected satellite (2)">Follow</button>

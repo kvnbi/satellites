@@ -5,14 +5,64 @@ import { S, MAX_SATS, colArr, DOT_RGB, SELECT_RGB, posArr, posA, posB } from '..
 import { satMesh } from './sat-mesh.js';
 import { applyFilters } from '../ui/filters.js';
 import { clearSelectionUI } from '../ui/selection.js';
+import { buildOrbit } from './overlays.js';
+import { simulationTime, timeOffset } from './time.js';
 
 const STEP_MS = 5000;
 let tA = 0, tB = 0;
+let generation = 0, workerReady = false, inFlight = false;
+let queuedTime = null, lastHistoryRequest = 0;
+const historyWorker = new Worker(new URL('./history-worker.js', import.meta.url), { type: 'module' });
+
+function sendHistorical(time) {
+  if (!workerReady) { queuedTime = time; return; }
+  if (inFlight) { queuedTime = time; return; }
+  inFlight = true;
+  historyWorker.postMessage({ type: 'positions', generation, time, offset: timeOffset() });
+}
+
+historyWorker.onmessage = ({ data }) => {
+  if (data.generation !== generation) return;
+  if (data.type === 'ready') {
+    workerReady = true;
+    if (timeOffset() !== 0) sendHistorical(queuedTime ?? simulationTime());
+    queuedTime = null;
+    return;
+  }
+  if (data.type !== 'positions') return;
+  inFlight = false;
+  if (data.offset === timeOffset() && timeOffset() !== 0) {
+    const { positions, altitudes } = data;
+    for (let i = 0; i < S.count; i++) {
+      const o = i * 3;
+      if (!isFinite(positions[o])) continue;
+      posArr[o] = positions[o]; posArr[o + 1] = positions[o + 1]; posArr[o + 2] = positions[o + 2];
+      S.validSats[i].altKm = altitudes[i];
+    }
+    applyFilters();
+    if (S.selIdx >= 0) buildOrbit(data.time);
+  }
+  if (queuedTime !== null && timeOffset() !== 0) {
+    const time = queuedTime;
+    queuedTime = null;
+    sendHistorical(time);
+  }
+};
+
+export function timeChanged() {
+  if (timeOffset() === 0) {
+    queuedTime = null;
+    if (S.count) buildActiveSet();
+  } else if (S.count) {
+    lastHistoryRequest = Date.now();
+    sendHistorical(simulationTime());
+  }
+}
 
 export function buildActiveSet() {
   const prevNorad = (S.selIdx >= 0 && S.validSats[S.selIdx])
     ? String(S.validSats[S.selIdx].meta.NORAD_CAT_ID) : null;
-  const date = new Date();
+  const date = new Date(simulationTime());
   const gmst = sat.gstime(date);
   S.validSats = [];
   S.searchName = [];
@@ -40,7 +90,13 @@ export function buildActiveSet() {
     S.searchId.push(String(rec.meta.NORAD_CAT_ID));
     S.count++;
   }
-  tA = tB = Date.now();
+  tA = tB = date.getTime();
+  generation++;
+  workerReady = false;
+  inFlight = false;
+  queuedTime = null;
+  historyWorker.postMessage({ type: 'init', generation,
+    records: S.validSats.map(e => e.satrec), globeRadius: globe.getGlobeRadius(), earthRadiusKm: EARTH_R_KM });
 
   S.selIdx = prevNorad === null ? -1 : S.searchId.indexOf(prevNorad);
   if (S.selIdx >= 0) {
@@ -82,7 +138,14 @@ function roll() {
 
 export function interpolatePositions() {
   if (S.count === 0) return false;
-  const now = Date.now();
+  const now = simulationTime();
+  if (timeOffset() !== 0) {
+    if (Date.now() - lastHistoryRequest >= STEP_MS) {
+      lastHistoryRequest = Date.now();
+      sendHistorical(now);
+    }
+    return false;
+  }
   let rolled = false;
   if (now - tB > 30000) { buildActiveSet(); }
   else if (now >= tB)   { roll(); rolled = true; }

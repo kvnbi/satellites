@@ -1,6 +1,7 @@
 import * as sat from 'satellite.js';
 import { S } from '../state.js';
 import { esc } from '../utils.js';
+import { simulationTime } from '../core/time.js';
 
 export const infoEl = document.getElementById('info');
 
@@ -95,7 +96,7 @@ function updateLiveInfo() {
   const e = S.validSats[S.selIdx];
   if (!e) return;
 
-  const now = new Date();
+  const now = new Date(simulationTime());
   let pv;
   try { pv = sat.propagate(e.satrec, now); } catch { return; }
   const r = pv && pv.position, v = pv && pv.velocity;

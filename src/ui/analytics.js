@@ -1,5 +1,6 @@
 import * as sat from 'satellite.js';
 import { S } from '../state.js';
+import { simulationTime } from '../core/time.js';
 
 const anEl       = document.getElementById('analytics');
 const anHead     = document.getElementById('an-head');
@@ -71,7 +72,7 @@ function anComputeProfile() {
   if (!(periodMs > 0)) return;
   const orbitMs = anPeriodMsFor(e) || periodMs;
   anN = Math.max(300, Math.min(AN_MAX, Math.round(periodMs / orbitMs * 20)));
-  const t0 = Date.now() - periodMs / 2;
+  const t0 = simulationTime() - periodMs / 2;
   let aMin = Infinity, aMax = -Infinity, sMin = Infinity, sMax = -Infinity, good = 0;
   for (let i = 0; i < anN; i++) {
     const dt = (i / (anN - 1)) * periodMs;
@@ -100,7 +101,7 @@ function anComputeProfile() {
 
 function anNowFrac() {
   if (!anValid || anPeriodMs <= 0) return 0.5;
-  return Math.max(0, Math.min(1, (Date.now() - anT0) / anPeriodMs));
+  return Math.max(0, Math.min(1, (simulationTime() - anT0) / anPeriodMs));
 }
 function anSampleAt(arr, frac) {
   const x = frac * (anN - 1);
@@ -146,7 +147,7 @@ function anDrawSeries(w, h, arr, ymin, ymax, unit, dec, opts) {
   const span = (ymax - ymin) || 1;
   const X = (i) => padL + (i / (anN - 1)) * pw;
   const Y = (v) => padT + (1 - (v - ymin) / span) * ph;
-  const nf = anNowFrac(), nowMs = Date.now();
+  const nf = anNowFrac(), nowMs = simulationTime();
 
   anCtx.fillStyle = 'rgba(255,255,255,0.028)';
   anCtx.fillRect(padL, padT, nf * pw, ph);
@@ -278,7 +279,7 @@ function anDrawTrack(w, h) {
     if (best >= 0 && bestD < 18 * 18) {
       anCtx.strokeStyle = 'rgba(255,255,255,0.5)'; anCtx.lineWidth = 1;
       anCtx.beginPath(); anCtx.arc(MX(anLng[best]), MY(anLat[best]), 4, 0, 6.283); anCtx.stroke();
-      hov = { lat: anLat[best], lng: anLng[best], off: anT0 + anT[best] - Date.now() };
+      hov = { lat: anLat[best], lng: anLng[best], off: anT0 + anT[best] - simulationTime() };
     }
   }
 
@@ -293,7 +294,7 @@ function anDrawTrack(w, h) {
 function anUpdateData() {
   if (!anOpen || S.selIdx < 0) return;
   const e = S.validSats[S.selIdx]; if (!e || !e.satrec) { anDataEl.innerHTML = ''; return; }
-  const sr = e.satrec, now = new Date();
+  const sr = e.satrec, now = new Date(simulationTime());
   let pv; try { pv = sat.propagate(sr, now); } catch { return; }
   const r = pv && pv.position, v = pv && pv.velocity;
   if (!r || !v || typeof r !== 'object' || typeof v !== 'object') return;
@@ -390,7 +391,7 @@ export function collapseAnalyticsExpanded() {
 
 export function tickAnalytics(tnow) {
   if (!anOpen) return;
-  if (anValid && tnow - anT0 >= anPeriodMs) anComputeProfile();
+  if (anValid && Math.abs(simulationTime() - (anT0 + anPeriodMs / 2)) > anPeriodMs / 3) anComputeProfile();
   if (anNeedsDraw || tnow - anLastDraw >= 200) {
     anLastDraw = tnow; anNeedsDraw = false; anDraw(); anUpdateData();
   }

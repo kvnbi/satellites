@@ -5,6 +5,7 @@ import { LineGeometry }   from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial }   from 'three/examples/jsm/lines/LineMaterial.js';
 import { scene, globe, GLOBE_R, EARTH_R_KM } from './scene.js';
 import { S, posArr } from '../state.js';
+import { simulationTime, timeOffset } from './time.js';
 
 const orbitGeom = new LineGeometry();
 const orbitMat  = new LineMaterial({
@@ -22,6 +23,7 @@ window.addEventListener('resize', () => {
 });
 
 let orbitGmst0   = 0;
+let orbitDisplayTime = 0;
 let orbitBasePts = null;
 
 const nadirArr  = new Float32Array(6);
@@ -36,11 +38,11 @@ scene.add(nadirLine);
 const ORBIT_STEPS = 256;
 const MU_KM = 398600.8;
 
-export function buildOrbit() {
+export function buildOrbit(time = simulationTime()) {
   if (S.selIdx < 0 || S.selIdx >= S.count) { orbitLine.visible = false; return; }
   const satrec = S.validSats[S.selIdx].satrec;
 
-  const t0    = Date.now();
+  const t0    = time;
   const gmst0 = sat.gstime(new Date(t0));
   let pv;
   try { pv = sat.propagate(satrec, new Date(t0)); } catch { orbitLine.visible = false; return; }
@@ -89,6 +91,7 @@ export function buildOrbit() {
   orbitGeom.setPositions(flat);
   orbitBasePts = flat;
   orbitGmst0   = gmst0;
+  orbitDisplayTime = time;
   orbitLine.rotation.y = 0;
   orbitLine.visible = (S.camMode !== 'follow');
 }
@@ -111,7 +114,8 @@ export function hideSelectionOverlays() {
 }
 
 export function tickOrbitSpin() {
-  orbitLine.rotation.y = -(sat.gstime(new Date()) - orbitGmst0);
+  const time = timeOffset() === 0 ? simulationTime() : orbitDisplayTime;
+  orbitLine.rotation.y = -(sat.gstime(new Date(time)) - orbitGmst0);
 }
 
 export function orbitSize(satPos) {
