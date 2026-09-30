@@ -1,8 +1,10 @@
 import * as THREE from 'three';
-import { camera, controls, renderer, GLOBE_R, tuneRotateSpeed } from '../core/scene.js';
+import * as sat from 'satellite.js';
+import { camera, controls, renderer, globe, GLOBE_R, EARTH_R_KM, tuneRotateSpeed } from '../core/scene.js';
 import { S, posArr, posA, posB } from '../state.js';
 import { buildOrbit, updateNadirLine, hideSelectionOverlays, orbitSize } from '../core/overlays.js';
 import { satMaterial } from '../core/sat-mesh.js';
+import { simulationTime, timeOffset } from '../core/time.js';
 
 const _trackPos = new THREE.Vector3();
 const _S     = new THREE.Vector3();
@@ -10,6 +12,30 @@ const _up    = new THREE.Vector3();
 const _fwd   = new THREE.Vector3();
 const _right = new THREE.Vector3();
 const _aim   = new THREE.Vector3();
+const _historicalDir = new THREE.Vector3();
+let historicalDirIdx = -1, historicalDirTime = 0;
+
+function historicalDirection(i) {
+  const time = simulationTime();
+  if (i === historicalDirIdx && Math.abs(time - historicalDirTime) < 1000) return;
+  historicalDirIdx = i;
+  historicalDirTime = time;
+  _historicalDir.set(0, 0, 0);
+  const satrec = S.validSats[i]?.satrec;
+  if (!satrec) return;
+  try {
+    const aDate = new Date(time), bDate = new Date(time + 1000);
+    const a = sat.propagate(satrec, aDate)?.position;
+    const b = sat.propagate(satrec, bDate)?.position;
+    if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return;
+    const aGeo = sat.eciToGeodetic(a, sat.gstime(aDate));
+    const bGeo = sat.eciToGeodetic(b, sat.gstime(bDate));
+    if (![aGeo.latitude, aGeo.longitude, aGeo.height, bGeo.latitude, bGeo.longitude, bGeo.height].every(isFinite)) return;
+    const aWorld = globe.getCoords(sat.degreesLat(aGeo.latitude), sat.degreesLong(aGeo.longitude), aGeo.height / EARTH_R_KM);
+    const bWorld = globe.getCoords(sat.degreesLat(bGeo.latitude), sat.degreesLong(bGeo.longitude), bGeo.height / EARTH_R_KM);
+    _historicalDir.set(bWorld.x - aWorld.x, bWorld.y - aWorld.y, bWorld.z - aWorld.z);
+  } catch {}
+}
 
 let lookYaw = 0, lookPitch = 0;
 let followDrag = false, followLastX = 0, followLastY = 0;
@@ -89,7 +115,8 @@ function followState(outPos, outAim, outUp) {
   const i = S.selIdx;
   _S.set(posArr[i*3], posArr[i*3+1], posArr[i*3+2]);
   _up.copy(_S).normalize();
-  _fwd.set(posB[i*3]-posA[i*3], posB[i*3+1]-posA[i*3+1], posB[i*3+2]-posA[i*3+2]);
+  if (timeOffset() !== 0) { historicalDirection(i); _fwd.copy(_historicalDir); }
+  else _fwd.set(posB[i*3]-posA[i*3], posB[i*3+1]-posA[i*3+1], posB[i*3+2]-posA[i*3+2]);
   _fwd.addScaledVector(_up, -_fwd.dot(_up));
   if (_fwd.lengthSq() < 1e-9) {
     _fwd.set(0, 1, 0).cross(_up);

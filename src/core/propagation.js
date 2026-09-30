@@ -31,7 +31,7 @@ historyWorker.onmessage = ({ data }) => {
   }
   if (data.type !== 'positions') return;
   inFlight = false;
-  if (data.offset === timeOffset() && timeOffset() !== 0) {
+  if (timeOffset() !== 0) {
     const { positions, altitudes } = data;
     for (let i = 0; i < S.count; i++) {
       const o = i * 3;
@@ -81,9 +81,9 @@ export function buildActiveSet() {
 
     const i = S.count;
     const w = globe.getCoords(lat, lng, alt / EARTH_R_KM);
-    posA[i*3] = posB[i*3] = w.x;
-    posA[i*3+1] = posB[i*3+1] = w.y;
-    posA[i*3+2] = posB[i*3+2] = w.z;
+    posArr[i*3] = posA[i*3] = posB[i*3] = w.x;
+    posArr[i*3+1] = posA[i*3+1] = posB[i*3+1] = w.y;
+    posArr[i*3+2] = posA[i*3+2] = posB[i*3+2] = w.z;
     colArr[i*3] = DOT_RGB[0]; colArr[i*3+1] = DOT_RGB[1]; colArr[i*3+2] = DOT_RGB[2];
     S.validSats.push({ meta: rec.meta, satrec: rec.satrec, lat, lng, altKm: alt });
     S.searchName.push((rec.meta.OBJECT_NAME || '').toUpperCase());
@@ -106,9 +106,10 @@ export function buildActiveSet() {
     clearSelectionUI();
   }
   if (S.followHideIdx >= 0) S.followHideIdx = S.selIdx;
-  if (satMesh) satMesh.instanceColor.needsUpdate = true;
+  if (satMesh) { satMesh.count = S.count; satMesh.instanceColor.needsUpdate = true; }
 
   applyFilters();
+  if (S.selIdx >= 0) buildOrbit(date.getTime());
 }
 
 function roll() {

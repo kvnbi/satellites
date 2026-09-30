@@ -80,6 +80,12 @@ export function renderInfo(s) {
 }
 
 let geoGen = 0, lastGeoMs = 0;
+
+export function invalidateLiveLocation() {
+  geoGen++;
+  if (S.selIdx >= 0 && liveEls) liveEls.loc.textContent = '…';
+}
+
 async function updateLocation(lat, lng) {
   const myGen = geoGen;
   try {

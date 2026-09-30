@@ -1,6 +1,6 @@
 import { setTimeOffset } from '../core/time.js';
 import { timeChanged } from '../core/propagation.js';
-import { buildOrbit } from '../core/overlays.js';
+import { invalidateLiveLocation } from './info-panel.js';
 
 const slider = document.getElementById('time-slider');
 const readout = document.getElementById('time-readout');
@@ -14,7 +14,7 @@ function updateTime() {
   liveButton.disabled = minutes === 0;
   setTimeOffset(-minutes);
   timeChanged();
-  if (minutes === 0) buildOrbit();
+  invalidateLiveLocation();
 }
 
 slider.addEventListener('input', updateTime);
